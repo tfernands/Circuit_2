@@ -8,20 +8,6 @@ class CComponent {
 
 	update(){}
 
-	_createNode(id, type){
-		if (type == CNode.INPUT){
-			let node = new CNode(id, CNode.INPUT, this);
-			this.inputs.push(node);
-			return node;
-		}
-		else if (type == CNode.OUTPUT){
-			let node = new CNode(id, CNode.OUTPUT, this);
-			this.outputs.push(node);
-			return node;
-		}
-		throw "Invalid CNode type";
-	}
-
 	input(arr){
 		for (let n of this.getAllNodes()){
 			n.reset();
@@ -79,6 +65,20 @@ class CComponent {
 		return '{'+this.name+
 		', inputs: ['+this.inputs.map(e=>{return e.state})+
 		']  outputs: ['+this.outputs.map(e=>{return e.state})+']}';
+	}
+
+	_createNode(id, type){
+		if (type == CNode.INPUT){
+			let node = new CNode(id, CNode.INPUT, this);
+			this.inputs.push(node);
+			return node;
+		}
+		else if (type == CNode.OUTPUT){
+			let node = new CNode(id, CNode.OUTPUT, this);
+			this.outputs.push(node);
+			return node;
+		}
+		throw "Invalid CNode type";
 	}
 }
 
@@ -182,14 +182,14 @@ class CCircuit extends CComponent{
 			for (let i = 0; i < c.inputs.length; i++){
 				let n = c.inputs[i];
 				n._component = c;
-				if (n.input == null){
+				if (!n.hasConnection()){
 					this.inputs.push([ci, i, n.id]);
 				}
 			}
 			for (let i = 0; i < c.outputs.length; i++){
 				let n = c.outputs[i];
 				n._component = c;
-				if (n.connections.length == 0){
+				if (!n.hasConnection()){
 					this.outputs.push([ci, i+c.inputs.length, n.id]);
 				}
 			}

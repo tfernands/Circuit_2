@@ -70,57 +70,6 @@ h1 {
 	text-align: center;
 }
 
-/* Tooltip container */
-/* Tooltip text */
-.tooltip .tooltiptext{
-	cursor: default;
-  visibility: hidden;
-  width: 60px;
-  background-color: #5555;
-  color: #fff;
-  text-align: center;
-  padding: 5px 0;
-  border-radius: 6px;
-  backdrop-filter: blur(5px);
- 
-  /* Position the tooltip text */
-  position: absolute;
-  top: -100%;
-  z-index: 1;
-
-  /* Fade in tooltip */
-  opacity: 0;
-  transition: opacity 0.3s 1s;
-}
-.tooltip .tooltip-left {
-  margin-left: 15px;
-}
-.tooltip .tooltip-right {
-  margin-left: -75px;
-}
-/* tooltip arrow */
-.tooltip .tooltiptext::after{
-  content: " ";
-  position: absolute;
-  top: 50%;
-  margin-top: -5px;
-  border-width: 5px;
-  border-style: solid; 
-}
-.tooltip .tooltip-left::after {
-  right: 100%; /* To the left of the tooltip */
-  border-color: transparent #5555 transparent transparent; 
-}
-.tooltip .tooltip-right::after {
-  left: 100%; /* To the left of the tooltip */
-  border-color: transparent transparent transparent #5555; 
-}
-/* Show the tooltip text when you mouse over the tooltip container */
-.tooltip:hover .tooltiptext {
-  visibility: visible;
-  opacity: 1;
-}
-
 .modal{
 	position: absolute;
 	top: 0;
@@ -296,4 +245,58 @@ circle[state="1"]{
 
 [unselectable] {
 	user-select: none;
+}
+
+
+
+
+/* Tooltip container */
+/* Tooltip text */
+.tooltip .tooltiptext{
+	cursor: default;
+  visibility: hidden;
+  width: 60px;
+  background-color: #5555;
+  color: #fff;
+  text-align: center;
+  padding: 5px 0;
+  border-radius: 6px;
+  backdrop-filter: blur(5px);
+ 
+  /* Position the tooltip text */
+  position: absolute;
+  top: -100%;
+  z-index: 1;
+
+  /* Fade in tooltip */
+  opacity: 0;
+  transition: opacity 0.3s 1s;
+}
+.tooltip .tooltip-left {
+  margin-left: 15px;
+}
+.tooltip .tooltip-right {
+  margin-left: -75px;
+}
+/* tooltip arrow */
+.tooltip .tooltiptext::after{
+  content: " ";
+  position: absolute;
+  top: 50%;
+  margin-top: -5px;
+  border-width: 5px;
+  border-style: solid; 
+}
+.tooltip .tooltip-left::after {
+  right: 100%; /* To the left of the tooltip */
+  border-color: transparent #5555 transparent transparent; 
+}
+.tooltip .tooltip-right::after {
+  left: 100%; /* To the left of the tooltip */
+  border-color: transparent transparent transparent #5555; 
+}
+/* Show the tooltip text when you mouse over the tooltip container */
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
 }

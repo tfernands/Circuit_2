@@ -8,18 +8,24 @@ class GNode {
     this.element.setAttribute('class', 'io tooltip');
     this.element.setAttribute('type', cnode.type);
     this.element.setAttribute('id', cnode.id);
-    this.element.setAttribute('state', cnode.state);
+    this.element.setAttribute('state', cnode.read());
+
+    /*
+      <p class='tooltiptext tooltip-right' contenteditable="true">my tooltiptext </p>
+
+    */
+
 
     let tooltip = document.createElement('p');
     this.element.appendChild(tooltip);
 
     tooltip.setAttribute('class','tooltiptext '+(cnode.type==CNode.INPUT?'tooltip-right':'tooltip-left'));
-    tooltip.setAttribute('contenteditable',"true");
+    //tooltip.setAttribute('contenteditable',"true");
     tooltip.innerHTML = this.cnode.id;
-    tooltip.addEventListener("input", function() {
-      this.cnode.id = tooltip.innerHTML;
-      tooltip.innerHTML = this.cnode.id;
-    }, false);
+    // tooltip.addEventListener("input", function() {
+    //   this.cnode.id = tooltip.innerHTML;
+    //   tooltip.innerHTML = this.cnode.id;
+    // }, false);
 
     this.element.addEventListener('contextmenu', function(ev) {
       ev.preventDefault();
@@ -54,7 +60,7 @@ class GNode {
       this.element.style.cursor = 'pointer';
       this.element.addEventListener('click', (e)=>{
         if (e.path[0] == this.element &&
-            this.cnode.input == null &&
+            !this.cnode.hasConnection() &&
             !GConnection.connection_creation_mode){
           this.changeState();
           updateComponents();
