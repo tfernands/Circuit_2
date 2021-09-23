@@ -10,22 +10,10 @@ class GNode {
     this.element.setAttribute('id', cnode.id);
     this.element.setAttribute('state', cnode.read());
 
-    /*
-      <p class='tooltiptext tooltip-right' contenteditable="true">my tooltiptext </p>
-
-    */
-
-
     let tooltip = document.createElement('p');
     this.element.appendChild(tooltip);
-
     tooltip.setAttribute('class','tooltiptext '+(cnode.type==CNode.INPUT?'tooltip-right':'tooltip-left'));
-    //tooltip.setAttribute('contenteditable',"true");
     tooltip.innerHTML = this.cnode.id;
-    // tooltip.addEventListener("input", function() {
-    //   this.cnode.id = tooltip.innerHTML;
-    //   tooltip.innerHTML = this.cnode.id;
-    // }, false);
 
     this.element.addEventListener('contextmenu', function(ev) {
       ev.preventDefault();
