@@ -33,17 +33,20 @@ class CNode {
 					return true;
 				}
 				else{
-					throw "Node aready connected to one of the ends"
+					console.log("Node aready connected to one of the ends");
+					return false;
 				}
 			}
 			else if (this.type == CNode.INPUT && node.type == CNode.OUTPUT){
 				return node.connect(this);
 			}
 			else{
-				throw "Can not create connections between nodes of the same type";
+				console.log("Can not create connections between nodes of the same type");
+				return false;
 			}
 		}	
-		throw "TypeError 'node' are not a CNode";
+		console.log("TypeError 'node' are not a CNode");
+		return false;
 	}
 
 	disconnect(node){
