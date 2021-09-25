@@ -15,9 +15,7 @@ function load(files) {
   reader.onload = function(progressEvent){
     CCircuit.components = JSON.parse(this.result);
     document.getElementById('drawer').innerHTML="";
-    createModule("IO");
-    createModule("NOT");
-    createModule("AND");
+    initialize();
     for (const key in CCircuit.components) {
       if (key) createModule(key, CCircuit.components[key]);
     }
@@ -41,6 +39,7 @@ function createModule(module_name, module_json){
   btn.setAttribute('draggable','true');
   btn.innerHTML = name;
   try{
+    btn.onclick = ()=>{addComponent(btn.innerHTML)};
     btn.ondragstart = dragStart;
     btn.ondragover= allowDrop;
     drawer.appendChild(btn);
@@ -71,20 +70,16 @@ function clearWorkspace(){
   components.length = 0;
 }
 
-function criar_componente(){
-  if(createModule()){
-    document.getElementById('id01').style.display='none';
-  };
-  return false;
-}
-
 function addComponent(json){
   let workspace = document.getElementById("workspace");
   let component = new GComponent(CCircuit.fromJSON(json));
   components.push(component);
   workspace.appendChild(component.element);
-  component.element.style.top='50%';
-  component.element.style.left='50%';
+  let offsetRect = workspace.getBoundingClientRect();
+  let contentRect = workspace.parentElement.getBoundingClientRect();
+  let rect = component.element.getBoundingClientRect();
+  component.element.style.top=(-offsetRect.y-rect.height/2+contentRect.height/2)+'px';
+  component.element.style.left=(-offsetRect.x-rect.width/2+contentRect.width/2)+'px';
   return component;
 }
 
@@ -95,6 +90,7 @@ function updateComponents() {
     }
   }
 }
+
 
 addEventListener("keydown", (e)=>{
   if (e.key=='Delete'){
@@ -163,6 +159,57 @@ function workspace_drop(e){
   component.element.style.left=(e.clientX-offsetRect.x-rect.width/2)+'px';
 }
 
+let current_activity = null;
+
+function startActivity(activity_name, actions, onabort, forcestart){
+  if (!(actions instanceof Array)){
+    actions = [actions];
+  }
+  let activity = document.getElementById('activity');
+  for (let c of activity.children){c.remove()}
+  if (activity.activity_name && activity.activity_name != activity_name){
+    if (forcestart){
+      activity.onabort?.();
+      destroyActivity();
+    }
+    else{
+      return false;
+    }
+  }
+  activity.activity_name = activity_name;
+  activity.onabort = onabort;
+  for (let action of actions){
+    let action_el = document.createElement('div');
+    let icon_el = document.createElement('i');
+    icon_el.setAttribute('class', 'material-icons');
+    icon_el.innerHTML = action.icon;
+    let text_el = document.createElement('span');
+    text_el.innerHTML = action.text;
+    action_el.appendChild(icon_el);
+    action_el.appendChild(text_el);
+    action_el.onclick=action.callback;
+    activity.appendChild(action_el);
+  }
+  activity.style.transform='translateY(0)';
+  activity.style.visibility='visible'
+  return true;
+}
+function destroyActivity(activity_name) {
+  let activity = document.getElementById('activity');
+  if (activity_name && activity_name!=activity.activity_name){
+    return;
+  }
+  activity.style.transform='translateY(-5em)';
+  activity.style.visibility='hidden';
+  activity.onabort;
+  activity.ontransitionend=()=>{
+    for (let c of activity.children){
+      c.remove();
+    }
+    activity.activity_name = null;
+    activity.ontransitionend = null;
+    activity.onabort = null;
+  };
+}
 
 setInterval(updateComponents, 10);
-

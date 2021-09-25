@@ -34,6 +34,7 @@ header{
 	background-color: #001b2e; /* Blue NCS */
 	border-bottom: thin solid #008cba;
 	box-shadow: 0 0 1em 0 black;
+	z-index: 2;
 }
 input[type="file"]{
 	display: none;
@@ -52,13 +53,49 @@ h1 {
     font-size: 1.1em;
     text-align: center;
     height: 50%;	
-  }
+  } 
 }
 
 .fright{
 	float: right;
 }
 
+@keyframes hide {
+	0% {
+		display: block;
+		transition: translate(0, 0);
+	}
+	100% {
+		display: block;
+		transition: translate(0, -10em);
+	}
+}
+
+#activity{
+	position: absolute;
+	top: 0;
+	margin: 5em;
+	width: calc(100% - 10em);
+	z-index: 1;
+	background-color: rgba(0,0,0,.5);
+	border-radius: 10em;
+	min-width: 30vw;
+	transform: translateY(-5em);
+	transition: .5s;
+}
+#activity * {
+	vertical-align: middle;
+	margin: .4em;
+}
+@media only screen and (max-width: 450px) {
+	#activity{
+		margin: 4.5em 1em;
+		width: calc(100% - 2em);
+	}
+  #activity * {
+    margin: .3em;
+  } 
+}
 
 .container {
 	position: relative;
@@ -82,6 +119,7 @@ footer {
 	position: absolute;
 	padding: 1em 1em;
 	bottom: 0;
+	margin: 1em;
 }
 
 button, .btn{

@@ -16,8 +16,31 @@
   <script type="text/javascript" src="scripts/ccircuit.js"></script>
   <script type="text/javascript" src="scripts/gcircuit.js"></script>
   <script type="text/javascript" src="scripts/index.js" defer></script>
+  <script type="text/javascript">
+    function toogleFullscreen(){
+      e = document.getElementById('fullscreen');
+      if (document.fullscreen){
+        document.exitFullscreen()
+        .then(() => e.innerHTML = 'fullscreen')
+        .catch((err) => console.error(err))        
+      }
+      else{
+        document.getElementsByTagName('html')[0].requestFullscreen()
+        .then(() => e.innerHTML = 'fullscreen_exit')
+        .catch((err) => console.error(err))       
+      }
+    }
+    function initialize(){
+      let e=document.getElementById('container');
+      let r=e.getBoundingClientRect();
+      e.scroll(Math.max(r.width,r.height), Math.max(r.width,r.height));
+      createModule("IO");
+      createModule("NOT");
+      createModule("AND");
+    }
+  </script>
 </head>
-<body onload="let e=document.getElementById('container'); let r=e.getBoundingClientRect(); e.scroll(Math.max(r.width,r.height), Math.max(r.width,r.height))">
+<body onload="initialize()">
 
   <!-- The Modal -->
   <div id="id01" class="modal">
@@ -40,7 +63,7 @@
   </div>
 
   <header>
-    <label><i class="material-icons">menu</i></button></label>
+    <label onclick="toogleFullscreen()"><i id="fullscreen" class="material-icons">fullscreen</i></button></label>
     <h1>Portas Lógicas</h1>
     <span class="fright">
       <button onclick="document.getElementById('id01').style.display='block'; document.getElementById('component_name').focus();" class="w3-button"><i class="material-icons">add</i></button>
@@ -50,6 +73,8 @@
     </span>
   </header>
 
+  <div id="activity"></div>
+
   <div id="container" class="container">
     <div id="workspace" ondragover="allowDrop(event)" ondrop="workspace_drop(event)">
         <svg dragable id='svg' xmlns="http://www.w3.org/2000/svg"></svg>
@@ -57,9 +82,6 @@
   </div>
 
   <footer id='drawer' class='drawer' ondrop="drawer_drop(event)">
-    <button id='d0' onclick="addComponent(this.innerHTML)" ondragstart="dragStart(event)" ondragover="allowDrop(event)" draggable="true">IO</button>
-    <button id='d1' onclick="addComponent(this.innerHTML)" ondragstart="dragStart(event)" ondragover="allowDrop(event)" draggable="true">NOT</button>
-    <button id='d2' onclick="addComponent(this.innerHTML)" ondragstart="dragStart(event)" ondragover="allowDrop(event)" draggable="true">AND</button>
   </footer>
 
 </body>

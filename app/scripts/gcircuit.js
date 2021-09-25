@@ -1,5 +1,42 @@
 let offsetX, offsetY, workspace;
+
 let selection = [];
+
+
+let remove_selection_activity = {
+  icon: 'delete',
+  text: 'Excluir iten(s) selecionados',
+  callback: removeSelection,
+}
+function clearSelection(){
+  while(selection.length > 0){
+    selection[0].unselect?.();
+  }
+  destroyActivity('selection');
+}
+function addselection(obj){
+  let i = selection.indexOf(obj);
+  if (i == -1) selection.push(obj)
+  startActivity('selection',remove_selection_activity,clearSelection,false);
+}
+function removeFromSelection(obj) {
+  let i = selection.indexOf(obj);
+  if (i != -1) selection.splice(i,1);
+  if (selection.length > 0){
+    startActivity('selection',remove_selection_activity,clearSelection,false);
+  }
+  else{
+    destroyActivity('selection');
+  }
+}
+function removeSelection(){
+  while(selection.length > 0){
+    selection[0].remove?.();
+  }
+}
+
+
+
 
 class GNode {
 
@@ -67,6 +104,7 @@ class GNode {
     }
     if (this.cnode.type == CNode.OUTPUT){
       this.element.addEventListener('pointerdown', (e)=>{
+        e.stopPropagation();
         GConnection.createConnectionBegin(this);
       });
     }
@@ -91,7 +129,6 @@ class GNode {
   }
 
   remove(){
-    this.unselect();
     this.element.remove();
     for (let e of this.paths) e.remove();
     this.cnode.disconnectAll();
@@ -111,8 +148,17 @@ class GConnection {
   static tempConnection = null;
 
   static createConnectionBegin(gnode){
+    if (current_activity) return;
     GConnection.connection_creation_mode = true;
     GConnection.tempConnection = new GConnection(gnode, null);
+
+    let actions={
+      icon: 'close',
+      text: 'Criando conexão...',
+      callback: GConnection.createConnectionAbort,
+    }
+    startActivity('conexao',actions,GConnection.createConnectionAbort,true);
+
     document.onpointermove = (e)=>{
       e = e || window.event;
       e.preventDefault();
@@ -143,6 +189,7 @@ class GConnection {
     GConnection.tempConnection.disconnect();
     document.onpointerup = null;
     document.onpointermove = null;
+    destroyActivity();
   }
 
   static createConnectionEnd(){
@@ -152,6 +199,7 @@ class GConnection {
     GConnection.connection_creation_mode = false;
     document.onpointerup = null;
     document.onpointermove = null;
+    destroyActivity();
   }
 
   constructor(gnode1){
@@ -166,23 +214,21 @@ class GConnection {
   }
 
   select(){
-    if (!this.element.hasAttribute('selected')){
+    if (!GConnection.connection_creation_mode && !this.element.hasAttribute('selected')){
       this.element.setAttribute('selected','');
       for (let p of this.points){
         p[2].setAttribute('selected','');
       }
-      selection.push(this);
+      addselection(this);
     }
   }
 
   unselect(){
-    let i = selection.indexOf(this);
     this.element.removeAttribute('selected');
-    selection.splice(i,1);
     for (let p of this.points){
       p[2].removeAttribute('selected');
     }
-    selection.pop(this);
+    removeFromSelection(this);
   }
 
   addPoint(x, y){
@@ -285,25 +331,20 @@ class GComponent {
 
     if (!workspace){
       workspace = document.getElementById('workspace');
-      workspace.addEventListener('pointerdown',e=>{
-        while(selection.length > 0){
-          selection[0].unselect();
-        }
-      });
+      workspace.addEventListener('pointerdown', clearSelection);
     }
   }
 
   select(){
     if (!this.element.hasAttribute('selected')){
       this.element.setAttribute('selected','');
-      selection.push(this);
+      addselection(this);
     }
   }
 
   unselect(){
-    let i = selection.indexOf(this);
     this.element.removeAttribute('selected');
-    selection.splice(i,1);
+    removeFromSelection(this);
   }
 
   toggleSelection(){
@@ -325,6 +366,7 @@ class GComponent {
   }
 
   remove(){
+    this.unselect();
     this.element.remove();
     for (let n of this.inputs) n.remove();
     for (let n of this.outputs) n.remove();
@@ -367,7 +409,6 @@ class GComponent {
     this.element.onmove = ()=>{this._updatePathPositions()}
   }
 }
-
 
 document.onmousedown = filter;
 document.ontouchstart = filter;
