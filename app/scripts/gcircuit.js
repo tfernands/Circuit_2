@@ -55,6 +55,7 @@ class GNode {
 
     this.element.addEventListener('contextmenu', function(ev) {
       ev.preventDefault();
+      ev.stopPropagation();
       let pop = document.getElementById('id02');
       pop.style.display='block';
       let form = pop.querySelector('form');
@@ -92,7 +93,6 @@ class GNode {
       });
       this.element.addEventListener('pointerover', (e)=>{
         if (GConnection.connection_creation_mode){
-          console.log('overs')
           GConnection.tempConnection.gnode2 = this;
         }
       });
@@ -104,6 +104,7 @@ class GNode {
     }
     if (this.cnode.type == CNode.OUTPUT){
       this.element.addEventListener('pointerdown', (e)=>{
+        e.preventDefault();
         e.stopPropagation();
         GConnection.createConnectionBegin(this);
       });
@@ -151,7 +152,7 @@ class GConnection {
     if (current_activity) return;
     GConnection.connection_creation_mode = true;
     GConnection.tempConnection = new GConnection(gnode, null);
-
+    //GConnection.tempConnection.element.setAttribute('state', gnode.read());
     let actions={
       icon: 'close',
       text: 'Criando conexão...',
@@ -405,7 +406,7 @@ class GComponent {
       this.outputs.push(node);
       ioarr_out.appendChild(node.element);
     }
-    this.element.addEventListener('pointerdown', (e)=>{e.stopPropagation(); this.toggleSelection()});
+    this.element.addEventListener('pointerdown', (e)=>{if (e.target == this.element){e.stopPropagation(); this.toggleSelection()}});
     this.element.onmove = ()=>{this._updatePathPositions()}
   }
 }

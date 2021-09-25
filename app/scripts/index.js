@@ -94,17 +94,7 @@ function updateComponents() {
 
 addEventListener("keydown", (e)=>{
   if (e.key=='Delete'){
-    if (selectedOBJ != null){
-      if (selectedOBJ instanceof GComponent){
-        let i = components.indexOf(selectedOBJ);
-        components.splice(i, 1);
-        selectedOBJ.remove();
-        unselect();
-      }
-      else if (selectedOBJ instanceof GConnection){
-        selectedOBJ.remove();
-      }
-    }
+    removeSelection();
   }
   if (e.key=='Escape'){
     if (GConnection.connection_creation_mode){
