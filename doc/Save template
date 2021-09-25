@@ -1,0 +1,28 @@
+{
+	"NOT": {
+		"components": ["this"],
+		"inputs": [0],
+		"outputs": [1],
+		"names": ["A", "B"]
+	},
+
+	"AND": {
+		"components": ["this"],
+		"inputs": [0, 1],
+		"outputs": [2],
+		"nodes": {
+			"A": [0, 0]
+		}
+	},
+
+	"NOR": {
+		"components": ["AND", "NOT", "NOT"],
+		"inputs": ["A"],
+		"outputs": ["B"],
+		"nodes": {
+			"A": [0,"A"],
+			"B": [0,"B"],
+		}
+	}
+}
+
