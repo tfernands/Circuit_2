@@ -30,6 +30,12 @@
         .catch((err) => console.error(err))       
       }
     }
+    function criar_componente(){
+      if(createModule()){
+        document.getElementById('id01').style.display='none';
+      };
+      return false;
+    }
     function initialize(){
       let e=document.getElementById('container');
       let r=e.getBoundingClientRect();
