@@ -90,15 +90,15 @@ function updateComponents() {
 // SAVE AND LOAD
 
 function save(e){
-
+  let project_name = document.getElementById('project_name').innerHTML;
   let savejson = {
     components: CCircuit.components,
-    workspace: createModuleFromWorkspace("workspace"),
+    workspace: createModuleFromWorkspace(project_name),
   }
 
   let bb = new Blob([JSON.stringify(savejson)], { type: 'text/plain' });
   var a = document.createElement('a');
-  a.download = 'Logic_Gates.json';
+  a.download = project_name+'.json';
   a.href = window.URL.createObjectURL(bb);
   a.click();
 }
