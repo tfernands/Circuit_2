@@ -1,27 +1,143 @@
 
+let workspace = null;
 let components = []
 
+function initialize(){
+  workspace = document.getElementById('workspace');
+  let e=document.getElementById('container');
+  let r=e.getBoundingClientRect();
+  e.scroll(Math.max(r.width,r.height), Math.max(r.width,r.height));
+
+  //ATTACH EVENT LISTENERS
+  workspace.selectionRectElement = document.createElement('div');
+  workspace.selectionRectElement.setAttribute('class','selectionRect')
+  workspace.appendChild(workspace.selectionRectElement);
+
+  function startSelectionRectangle(e) {
+    if (e.target == workspace){
+      workspace.can_start_selection = true;
+      let offset = workspace.getBoundingClientRect();
+      workspace.rx1 = e.clientX-offset.x;
+      workspace.ry1 = e.clientY-offset.y;
+    }
+  }
+
+  workspace.addEventListener('pointerdown', (e)=>{
+    clearSelection();
+  });
+  workspace.addEventListener('mousedown', startSelectionRectangle);
+  window.addEventListener('mousemove', e=>{
+    if (workspace.can_start_selection){
+      if (!workspace.rect_selection){
+        workspace.rect_selection = true;
+        workspace.selectionRectElement.style.opacity=1;
+      }
+      let offset = workspace.getBoundingClientRect();
+      workspace.rx2 = e.clientX-offset.x;
+      workspace.ry2 = e.clientY-offset.y;
+      let x1 = Math.min(workspace.rx2, workspace.rx1);
+      let y1 = Math.min(workspace.ry2, workspace.ry1);
+      let x2 = Math.max(workspace.rx2, workspace.rx1);
+      let y2 = Math.max(workspace.ry2, workspace.ry1);
+      let w = x2-x1;
+      let h = y2-y1;
+      workspace.selectionRectElement.style.left = x1+'px';
+      workspace.selectionRectElement.style.top = y1+'px';
+      workspace.selectionRectElement.style.width = w+'px';
+      workspace.selectionRectElement.style.height = h+'px';
+      for (let el of workspace.children){
+        if (el.component){
+          let elRect = el.getBoundingClientRect();
+          if (elRect.x-offset.x > x1 &&
+              elRect.x+elRect.width-offset.x < x2 &&
+              elRect.y-offset.y > y1 &&
+              elRect.y+elRect.height-offset.y < y2){
+            select(el,'rectangle');
+          }
+          else{
+            unselect(el);
+          }
+        }
+      }
+
+    }
+  })
+  window.addEventListener('mouseup', e=>{
+    if (workspace.rect_selection || workspace.can_start_selection){   
+      workspace.rect_selection = false;
+      workspace.can_start_selection = false;
+      workspace.selectionRectElement.style.opacity=0;
+    }
+  })
+
+
+  createModule("IO");
+  createModule("NOT");
+  createModule("AND");
+  setInterval(updateComponents, 10);
+}
+
+
+function updateComponents() {
+  for (let j = 0; j < 5; j++){
+    for (let i = 0; i < components.length; i++){
+      components[i].update();
+    }
+  }
+}
+
+
+// SAVE AND LOAD
+
 function save(e){
-  let bb = new Blob([JSON.stringify(CCircuit.components)], { type: 'text/plain' });
+
+  let savejson = {
+    components: CCircuit.components,
+    workspace: createModuleFromWorkspace("workspace"),
+  }
+
+  let bb = new Blob([JSON.stringify(savejson)], { type: 'text/plain' });
   var a = document.createElement('a');
   a.download = 'Logic_Gates.json';
   a.href = window.URL.createObjectURL(bb);
   a.click();
 }
 
+json = null;
 function load(files) {
   var file = files[0];
   var reader = new FileReader();
   reader.onload = function(progressEvent){
-    CCircuit.components = JSON.parse(this.result);
+    json = JSON.parse(this.result);
+    CCircuit.components = json.components;
     document.getElementById('drawer').innerHTML="";
     initialize();
     for (const key in CCircuit.components) {
       if (key) createModule(key, CCircuit.components[key]);
     }
+    clearWorkspace();
+    workspaceFromJSON(json);
   };
   reader.readAsText(file); 
 }
+
+function workspaceFromJSON(json){
+  for (const i in json.workspace.components){
+    let comp = addComponent(json.workspace.components[i]);
+    comp.element.style.left = json.workspace.g[i].x;
+    comp.element.style.top = json.workspace.g[i].y;
+  }
+  for (const i in json.workspace.connections){
+    let cout = json.workspace.connections[i][0];
+    let cin = json.workspace.connections[i][1];
+    let gnode_out = components[cout[0]].outputs[cout[1]-components[cout[0]].inputs.length];
+    let gnode_in = components[cin[0]].inputs[cin[1]];
+    let con = new GConnection(gnode_out);
+    con.connect(gnode_in);
+  }
+}
+
+// CREATE MODULE
 
 function createModule(module_name, module_json){
   let name = module_name;
@@ -31,6 +147,7 @@ function createModule(module_name, module_json){
     name = component_name.value.toUpperCase();
     component_name.value="";
     json = createModuleFromWorkspace(name);
+    CCircuit.components[json.name] = json;
     clearWorkspace();
   } 
   let drawer = document.getElementById("drawer");
@@ -61,7 +178,7 @@ function createModuleFromWorkspace(name){
       return -1;
   });
   let json = (new CCircuit(name, components.map(e=>{return e.ccomp}))).toJSON();
-  CCircuit.components[json.name] = json;
+  json.g = components.map(e=>{return e.toJSON()});
   return json;
 }
 
@@ -69,6 +186,8 @@ function clearWorkspace(){
   for (let c of components) c.remove();
   components.length = 0;
 }
+
+
 
 function addComponent(json){
   let workspace = document.getElementById("workspace");
@@ -83,14 +202,9 @@ function addComponent(json){
   return component;
 }
 
-function updateComponents() {
-  for (let j = 0; j < 5; j++){
-    for (let i = 0; i < components.length; i++){
-      components[i].update();
-    }
-  }
-}
 
+
+// KEY EVENTS HANDLE
 
 addEventListener("keydown", (e)=>{
   if (e.key=='Delete'){
@@ -160,7 +274,7 @@ function startActivity(activity_name, actions, onabort, forcestart){
   if (activity.activity_name && activity.activity_name != activity_name){
     if (forcestart){
       activity.onabort?.();
-      destroyActivity();
+      resetActivity();
     }
     else{
       return false;
@@ -184,6 +298,16 @@ function startActivity(activity_name, actions, onabort, forcestart){
   activity.style.visibility='visible'
   return true;
 }
+function resetActivity(){
+  activity.style.transform='translateY(-5em)';
+  activity.style.visibility='hidden';
+  activity.activity_name = null;
+  activity.ontransitionend = null;
+  activity.onabort = null;
+  for (let c of activity.children){
+    c.remove();
+  }
+}
 function destroyActivity(activity_name) {
   let activity = document.getElementById('activity');
   if (activity_name && activity_name!=activity.activity_name){
@@ -191,15 +315,5 @@ function destroyActivity(activity_name) {
   }
   activity.style.transform='translateY(-5em)';
   activity.style.visibility='hidden';
-  activity.onabort;
-  activity.ontransitionend=()=>{
-    for (let c of activity.children){
-      c.remove();
-    }
-    activity.activity_name = null;
-    activity.ontransitionend = null;
-    activity.onabort = null;
-  };
+  activity.ontransitionend=resetActivity;
 }
-
-setInterval(updateComponents, 10);

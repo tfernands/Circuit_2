@@ -108,10 +108,13 @@ h1 {
 	height: 300vmax;
 	width: 300vmax;
 }
-#workspace svg{
+.selectionRect{
 	position: absolute;
-	width: 100%;
-	height: 100%;
+	background-color: rgba(20, 20, 50, .5);
+	border: thin solid white;
+	pointer-events:none;
+	opacity: 0;
+	transition: opacity 0.2s;
 }
 
 
@@ -133,6 +136,7 @@ button, .btn{
  	border-radius: 10px;
  	transition: .2s;
  	box-shadow: 0 .2em .4em rgba(0,0,0,.4);
+ 	touch-action: manipulation;
 }
 button: hover, .btn:hover{
 	background-color: #108FBF;
@@ -294,15 +298,21 @@ input:active, .btn:active, button:active{
   opacity: 1;
 }
 
-
+svg{
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	pointer-events:none;
+}
 path{
 	stroke: gray;
-	stroke-width: 3;
+	stroke-width: 5;
 	fill: None;
 	z-index: 10;
+	pointer-events:all;
 }
 path:hover {
-	stroke-width: 4;
+	stroke-width: 6;
 }
 path[selected]{
 	stroke-width: 4;
@@ -316,6 +326,7 @@ path[state="1"]{
 }
 circle {
 	r: 5;
+	pointer-events:all;
 }
 circle[state="0"]{
 	fill: darkred;

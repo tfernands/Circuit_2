@@ -1,42 +1,5 @@
-let offsetX, offsetY, workspace;
-
+let offsetX, offsetY;
 let selection = [];
-
-
-let remove_selection_activity = {
-  icon: 'delete',
-  text: 'Excluir iten(s) selecionados',
-  callback: removeSelection,
-}
-function clearSelection(){
-  while(selection.length > 0){
-    selection[0].unselect?.();
-  }
-  destroyActivity('selection');
-}
-function addselection(obj){
-  let i = selection.indexOf(obj);
-  if (i == -1) selection.push(obj)
-  startActivity('selection',remove_selection_activity,clearSelection,false);
-}
-function removeFromSelection(obj) {
-  let i = selection.indexOf(obj);
-  if (i != -1) selection.splice(i,1);
-  if (selection.length > 0){
-    startActivity('selection',remove_selection_activity,clearSelection,false);
-  }
-  else{
-    destroyActivity('selection');
-  }
-}
-function removeSelection(){
-  while(selection.length > 0){
-    selection[0].remove?.();
-  }
-}
-
-
-
 
 class GNode {
 
@@ -86,7 +49,7 @@ class GNode {
     if (this.cnode.type == CNode.INPUT){
       this.element.style.cursor = 'pointer';
       this.element.addEventListener('pointerdown', (e)=>{
-        if (e.path[0] == this.element && !this.cnode.hasConnection() && !GConnection.connection_creation_mode){
+        if (e.target == this.element && !this.cnode.hasConnection() && !GConnection.connection_creation_mode){
           this.changeState();
           updateComponents();
         }
@@ -152,7 +115,7 @@ class GConnection {
     if (current_activity) return;
     GConnection.connection_creation_mode = true;
     GConnection.tempConnection = new GConnection(gnode, null);
-    //GConnection.tempConnection.element.setAttribute('state', gnode.read());
+
     let actions={
       icon: 'close',
       text: 'Criando conexão...',
@@ -194,42 +157,38 @@ class GConnection {
   }
 
   static createConnectionEnd(){
-    if (GConnection.tempConnection.gnode2 == null){
+    if (GConnection.tempConnection && GConnection.tempConnection.gnode2 == null){
       return GConnection.createConnectionAbort();
     }
     GConnection.connection_creation_mode = false;
     document.onpointerup = null;
     document.onpointermove = null;
-    destroyActivity();
+    destroyActivity();  
   }
 
   constructor(gnode1){
     this.gnode1 = gnode1;
     this.gnode2 = null;
     this.svg = document.getElementById("svg");
-    this.points = [];
     this.element = document.createElementNS("http://www.w3.org/2000/svg", 'path');
     this.svg.appendChild(this.element);
-    this.element.addEventListener('click', (e)=>{this.select()});
-    this.selected = false;
-  }
-
-  select(){
-    if (!GConnection.connection_creation_mode && !this.element.hasAttribute('selected')){
-      this.element.setAttribute('selected','');
-      for (let p of this.points){
-        p[2].setAttribute('selected','');
+    this.points = [];
+    this.element.setAttribute('state', gnode1.read());
+    this.element.component = this;
+    this.element.addEventListener('pointerdown', selectionHandlerDown);
+    this.element.addEventListener('pointerup', selectionHandlerDown);
+    this.element.onselected = ()=>{
+      if (!GConnection.connection_creation_mode){
+        for (let p of this.points){
+          p[2].setAttribute('selected','');
+        }
       }
-      addselection(this);
+    };
+    this.element.onunselected=()=>{
+      for (let p of this.points){
+        p[2].removeAttribute('selected');
+      }
     }
-  }
-
-  unselect(){
-    this.element.removeAttribute('selected');
-    for (let p of this.points){
-      p[2].removeAttribute('selected');
-    }
-    removeFromSelection(this);
   }
 
   addPoint(x, y){
@@ -275,7 +234,7 @@ class GConnection {
   }
 
   remove(){
-    this.unselect();
+    unselect(this.element);
     let i = this.gnode1.paths.indexOf(this);
     this.gnode1.paths.splice(i,1);
     if (this.gnode2 != null){
@@ -311,14 +270,6 @@ class GConnection {
     this.element.setAttribute('d', d);
   }
 
-  toJSON(){
-    return {
-      input: this.gnode1.cnode.id,
-      output: this.gnode2.cnode.id,
-      points: this.points,
-    }
-  }
-
 }
 
 class GComponent {
@@ -329,32 +280,6 @@ class GComponent {
     this.outputs = [];
     this._createElement();
     this.update();
-
-    if (!workspace){
-      workspace = document.getElementById('workspace');
-      workspace.addEventListener('pointerdown', clearSelection);
-    }
-  }
-
-  select(){
-    if (!this.element.hasAttribute('selected')){
-      this.element.setAttribute('selected','');
-      addselection(this);
-    }
-  }
-
-  unselect(){
-    this.element.removeAttribute('selected');
-    removeFromSelection(this);
-  }
-
-  toggleSelection(){
-    if (this.element.hasAttribute('selected')){
-      this.unselect();
-    }
-    else{
-      this.select()
-    }
   }
 
   update(){
@@ -367,7 +292,7 @@ class GComponent {
   }
 
   remove(){
-    this.unselect();
+    unselect(this.element)
     this.element.remove();
     for (let n of this.inputs) n.remove();
     for (let n of this.outputs) n.remove();
@@ -406,10 +331,94 @@ class GComponent {
       this.outputs.push(node);
       ioarr_out.appendChild(node.element);
     }
-    this.element.addEventListener('pointerdown', (e)=>{if (e.target == this.element){e.stopPropagation(); this.toggleSelection()}});
+    this.element.component = this;
+    this.element.addEventListener('pointerdown',selectionHandlerDown);
+    this.element.addEventListener('pointerup',selectionHandlerUp);
     this.element.onmove = ()=>{this._updatePathPositions()}
   }
+
+  toJSON(){
+    return {
+      x: this.element.style.left,
+      y: this.element.style.top,
+    };
+  }
+
 }
+
+
+let remove_selection_activity = {
+  icon: 'delete',
+  text: 'Excluir iten(s) selecionados',
+  callback: removeSelection,
+}
+
+function select(target, tag){
+  if (!target.hasAttribute('selected')){
+    target.setAttribute('selected',tag?tag:'');
+    let i = selection.indexOf(target);
+    if (i == -1) selection.push(target)
+    target.onselected?.();
+    startActivity('selection',remove_selection_activity,clearSelection,false);
+  }
+  else if (tag){
+    target.setAttribute('selected',tag);
+  }
+}
+
+function unselect(target) {
+  if (target.hasAttribute('selected')){
+    target.removeAttribute('selected');
+    target.onunselected?.();
+    let i = selection.indexOf(target);
+    if (i != -1) selection.splice(i,1);
+  }
+  if (selection.length == 0){
+    destroyActivity('selection');
+  }
+}
+
+function selectionHandlerDown(e){
+  e.stopPropagation();
+  select(e.target);
+  if (e.shiftKey){
+    for (let el of selection){
+      select(el,'shift')
+    }
+  }
+  tag = e.target.getAttribute('selected');
+  if (!e.shiftKey && selection.length > 1 && tag == ''){
+    let i = 0;
+    while(selection.length > 1){
+      if (selection[i] != e.target){
+        unselect(selection[i]);
+      }
+      else{
+        i++;
+      }
+    }
+  }
+}
+function selectionHandlerUp(e){
+  console.log(e.target.distX, e.target.distY);
+  if ((e.target.distX!=0 || e.target.distY!=0) && selection.length == 1){
+    clearSelection();
+  }
+}
+
+function clearSelection(){
+  while(selection.length > 0){
+    unselect(selection[0]);
+  }
+}
+
+function removeSelection(){
+  while(selection.length > 0){
+    selection[0].component.remove();
+  }
+}
+
+
 
 document.onmousedown = filter;
 document.ontouchstart = filter;
@@ -421,6 +430,8 @@ function filter(e) {
   }
   workspace.parentElement.style = "overflow: hidden";
   target.moving = true;
+  target.distX = 0;
+  target.distY = 0;
   
   e.clientX ? // Check if Mouse events exist on user' device
   (target.oldX = e.clientX, // If they exist then use Mouse input
@@ -430,6 +441,10 @@ function filter(e) {
 
   target.oldLeft = window.getComputedStyle(target).getPropertyValue('left').split('px')[0] * 1;
   target.oldTop = window.getComputedStyle(target).getPropertyValue('top').split('px')[0] * 1;
+  for (let selected of selection){
+    selected.oldLeft = window.getComputedStyle(selected).getPropertyValue('left').split('px')[0] * 1;
+    selected.oldTop = window.getComputedStyle(selected).getPropertyValue('top').split('px')[0] * 1;
+  }
 
   document.onmousemove = dr;
   document.ontouchmove = dr;
@@ -444,14 +459,31 @@ function filter(e) {
     (target.distX = event.touches[0].clientX - target.oldX,
     target.distY = event.touches[0].clientY - target.oldY)
 
-    target.style.left = target.oldLeft + target.distX + "px";
-    target.style.top = target.oldTop + target.distY + "px";
-    target.onmove?.()
+    let targetmoved = false;
+    for (let selected of selection){
+      if (selected.classList.contains("draggable")){
+        selected.style.left = selected.oldLeft + target.distX + "px";
+        selected.style.top = selected.oldTop + target.distY + "px";
+        selected.onmove?.();
+        if (selected == target){
+          targetmoved = true;
+        }
+      }
+    }
+    if (!targetmoved){
+      target.style.left = target.oldLeft + target.distX + "px";
+      target.style.top = target.oldTop + target.distY + "px";
+      target.onmove?.()
+    }
   }
 
   function endDrag() {
     target.moving = false;
     workspace.parentElement.style = "";
+    document.onmousemove = null;
+    document.ontouchmove = null;
+    target.onmouseup = null;
+    target.ontouchend = null;
   }
   target.onmouseup = endDrag;
   target.ontouchend = endDrag;

@@ -36,14 +36,6 @@
       };
       return false;
     }
-    function initialize(){
-      let e=document.getElementById('container');
-      let r=e.getBoundingClientRect();
-      e.scroll(Math.max(r.width,r.height), Math.max(r.width,r.height));
-      createModule("IO");
-      createModule("NOT");
-      createModule("AND");
-    }
   </script>
 </head>
 <body onload="initialize()">

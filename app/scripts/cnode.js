@@ -12,6 +12,7 @@ class CNode {
 		this.type = type;
 		this.connections = [];
 		this._events = {};
+		this._eval = 0;
 		this._state = 0;
 		this._component = component;
 	}
@@ -77,6 +78,20 @@ class CNode {
 		}
 		this.connections.length = 0;
 		return true;
+	}
+
+	set(state){
+		if (state > 0) state = 1;
+		else state = 0;
+		if (this._state != state){
+			this._state = state;
+			if (this.type == CNode.OUTPUT){
+				for (let n of this.connections){
+					n._checkInputChange();
+				}
+			}
+			this._dispatchEvent('statechange');
+		}
 	}
 
 	write(state){

@@ -6,7 +6,12 @@ class CComponent {
 		this.outputs = [];
 	}
 
-	update(){}
+	eval(){}
+
+	update(){
+		this.eval();
+		this.commit();
+	}
 
 	input(arr){
 		for (let n of this.getAllNodes()){
