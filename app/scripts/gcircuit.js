@@ -414,10 +414,11 @@ function clearSelection(){
 
 function removeSelection(){
   while(selection.length > 0){
+    let i = components.indexOf(selection[0]);
+    components.splice(i,1);
     selection[0].component.remove();
   }
 }
-
 
 
 document.onmousedown = filter;
