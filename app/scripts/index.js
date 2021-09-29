@@ -122,6 +122,7 @@ function load(files) {
 }
 
 function workspaceFromJSON(json){
+  document.getElementById('project_name').innerHTML = json.workspace.name;
   for (const i in json.workspace.components){
     let comp = addComponent(json.workspace.components[i]);
     comp.element.style.left = json.workspace.g[i].x;
