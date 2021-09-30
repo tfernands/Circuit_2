@@ -1,5 +1,4 @@
 let offsetX, offsetY;
-let selection = [];
 
 class GNode {
 
@@ -153,7 +152,7 @@ class GConnection {
     GConnection.tempConnection.disconnect();
     document.onpointerup = null;
     document.onpointermove = null;
-    destroyActivity();
+    abortActivity();
   }
 
   static createConnectionEnd(){
@@ -163,7 +162,7 @@ class GConnection {
     GConnection.connection_creation_mode = false;
     document.onpointerup = null;
     document.onpointermove = null;
-    destroyActivity();  
+    endActivity();  
   }
 
   constructor(gnode1){
@@ -345,22 +344,39 @@ class GComponent {
 }
 
 
+
+/* 
+############################################# SELECTION HANDLE ##########################################
+* has to add the event listener to be selectable
+* element.addEventListener('pointerup', selectionHandler);
+* 
+* selected elements has the attribute 'selected' attached to then
+* 
+* events:
+*   .onselected()
+*   .onunselected()
+#########################################################################################################
+*/
+
+
+let selection = [];
+
 let remove_selection_activity = {
   icon: 'delete',
   text: 'Excluir iten(s) selecionados',
   callback: removeSelection,
 }
 
-function select(target, tag){
+function select(target){
   if (!target.hasAttribute('selected')){
-    target.setAttribute('selected',tag?tag:'');
-    let i = selection.indexOf(target);
-    if (i == -1) selection.push(target)
-    target.onselected?.();
-    startActivity('selection',remove_selection_activity,clearSelection,false);
-  }
-  else if (tag){
-    target.setAttribute('selected',tag);
+    let started = startActivity('selection',remove_selection_activity,clearSelection,false);
+    if (started) {
+      target.setAttribute('selected','');
+      let i = selection.indexOf(target);
+      if (i == -1) selection.push(target)
+      target.onselected?.();
+      return true;
+    }
   }
 }
 
@@ -371,19 +387,36 @@ function unselect(target) {
     let i = selection.indexOf(target);
     if (i != -1) selection.splice(i,1);
   }
-  if (selection.length == 0){
-    destroyActivity('selection');
+  if (selection.length == 0 && activity.activity_name){
+    endActivity('selection');
   }
 }
 
 function selectionHandler(e){
-  if (e.target.distX==0 && e.target.distY==0){ 
-    if (!e.shiftKey){
-      clearSelection();
+  if (e.target.distX==0 && e.target.distY==0){
+    if (e.target.hasAttribute('selected')){
+      if (!e.shiftKey && selection.length > 1){
+        let i = 0;
+        while(selection.length > 1){
+          if (selection[i] != e.target){
+            unselect(selection[i]);
+          }
+          else{
+            i++;
+          }
+        }
+      }
+      else{
+        unselect(e.target);
+      }
     }
-    select(e.target);
-  }else{
-    
+    else{
+      if (!e.shiftKey){
+        clearSelection();
+      }
+      select(e.target);
+    }
+
   }
 }
 
@@ -401,6 +434,12 @@ function removeSelection(){
   }
 }
 
+
+/* 
+############################################# POINTER MOVE ##########################################
+* element has to contain the class draggable
+#####################################################################################################
+*/
 
 document.onmousedown = filter;
 document.ontouchstart = filter;

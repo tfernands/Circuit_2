@@ -26,8 +26,6 @@ function initialize(){
 
   workspace.addEventListener('pointerdown', (e)=>{
     if (e.target == workspace){
-      e.stopPropagation();
-      e.preventDefault();
       clearSelection();
     }
   });
@@ -218,10 +216,8 @@ addEventListener("keydown", (e)=>{
     removeSelection();
   }
   if (e.key=='Escape'){
-    if (GConnection.connection_creation_mode){
-      GConnection.createConnectionAbort();
-    }
-    else if (document.getElementById('id01').style.display!='none'){
+    destroyActivity();
+    if (document.getElementById('id01').style.display!='none'){
       document.getElementById('id01').style.display='none';
     }
     else if (document.getElementById('id02').style.display!='none'){
@@ -270,52 +266,71 @@ function workspace_drop(e){
   component.element.style.left=(e.clientX-offsetRect.x-rect.width/2)+'px';
 }
 
+
+
+
+
 let current_activity = null;
 function startActivity(activity_name, actions, onabort, forcestart){
   if (!(actions instanceof Array)){
     actions = [actions];
   }
-  for (let c of activity.children){c.remove()}
   if (activity.activity_name && activity.activity_name != activity_name){
     if (forcestart){
-      activity.onabort?.();
       resetActivity();
     }
     else{
       return false;
     }
   }
+  if (activity.activity_name != activity_name){
+    for (let action of actions){
+      let action_el = document.createElement('div');
+      let icon_el = document.createElement('i');
+      icon_el.setAttribute('class', 'material-icons');
+      icon_el.innerHTML = action.icon;
+      let text_el = document.createElement('span');
+      text_el.innerHTML = action.text;
+      action_el.appendChild(icon_el);
+      action_el.appendChild(text_el);
+      action_el.onclick=action.callback;
+      activity.appendChild(action_el);
+    }
+  }
   activity.activity_name = activity_name;
   activity.onabort = onabort;
-  for (let action of actions){
-    let action_el = document.createElement('div');
-    let icon_el = document.createElement('i');
-    icon_el.setAttribute('class', 'material-icons');
-    icon_el.innerHTML = action.icon;
-    let text_el = document.createElement('span');
-    text_el.innerHTML = action.text;
-    action_el.appendChild(icon_el);
-    action_el.appendChild(text_el);
-    action_el.onclick=action.callback;
-    activity.appendChild(action_el);
-  }
+  activity.aborted = false;
   activity.style.transform='translateY(0)';
   activity.style.visibility='visible'
+  activity.ontransitionend=null;
   return true;
 }
+
 function resetActivity(){
-  activity.style.transform='translateY(-5em)';
-  activity.style.visibility='hidden';
   activity.activity_name = null;
   activity.ontransitionend = null;
   activity.onabort = null;
+  activity.aborted = false;
   for (let c of activity.children){
     c.remove();
   }
 }
-function destroyActivity(activity_name) {   
-  if (activity_name && activity_name!=activity.activity_name) return;
+
+function abortActivity(activity_name) {   
+  if (activity_name && activity_name!=activity.activity_name || activity.aborted) return;
+  activity.ontransitionend=resetActivity;
   activity.style.transform='translateY(-5em)';
   activity.style.visibility='hidden';
+  if (!activity.aborted){
+    activity.aborted = true;
+    activity.onabort?.();
+  }
+  activity.onabort = null;
+}
+
+function endActivity(activity_name){
+  if (activity_name && activity_name!=activity.activity_name || activity.aborted) return;
   activity.ontransitionend=resetActivity;
+  activity.style.transform='translateY(-5em)';
+  activity.style.visibility='hidden';
 }
