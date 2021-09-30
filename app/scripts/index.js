@@ -56,7 +56,7 @@ function initialize(){
               elRect.x+elRect.width-offset.x < x2 &&
               elRect.y-offset.y > y1 &&
               elRect.y+elRect.height-offset.y < y2){
-            select(el,'rectangle');
+            select(el);
           }
           else{
             unselect(el);

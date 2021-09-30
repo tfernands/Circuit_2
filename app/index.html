@@ -41,7 +41,7 @@
 <body onload="initialize()">
 
   <!-- The Modal -->
-  <div id="id01" class="modal">
+  <div id="id01" class="modal" onclick="this.style.display='none'">
     <div class="content">
         <form onsubmit="return criar_componente()">
           <input id="component_name" type="text" placeholder="Nome do componente...">
@@ -51,7 +51,7 @@
   </div>
 
   <!-- The Modal -->
-  <div id="id02" class="modal">
+  <div id="id02" class="modal" onclick="this.style.display='none'">
     <div class="content">
         <form onsubmit="return false">
           <input id="io_name" type="text" placeholder="Nome da I/O...">
