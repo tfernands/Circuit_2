@@ -1,9 +1,11 @@
 
 let workspace = null;
+let activity = null;
 let components = []
 
 function initialize(){
   workspace = document.getElementById('workspace');
+  activity = document.getElementById('activity');
   let e=document.getElementById('container');
   let r=e.getBoundingClientRect();
   e.scroll(Math.max(r.width,r.height), Math.max(r.width,r.height));
@@ -23,7 +25,11 @@ function initialize(){
   }
 
   workspace.addEventListener('pointerdown', (e)=>{
-    clearSelection();
+    if (e.target == workspace){
+      e.stopPropagation();
+      e.preventDefault();
+      clearSelection();
+    }
   });
   workspace.addEventListener('mousedown', startSelectionRectangle);
   window.addEventListener('mousemove', e=>{
@@ -265,12 +271,10 @@ function workspace_drop(e){
 }
 
 let current_activity = null;
-
 function startActivity(activity_name, actions, onabort, forcestart){
   if (!(actions instanceof Array)){
     actions = [actions];
   }
-  let activity = document.getElementById('activity');
   for (let c of activity.children){c.remove()}
   if (activity.activity_name && activity.activity_name != activity_name){
     if (forcestart){
@@ -309,11 +313,8 @@ function resetActivity(){
     c.remove();
   }
 }
-function destroyActivity(activity_name) {
-  let activity = document.getElementById('activity');
-  if (activity_name && activity_name!=activity.activity_name){
-    return;
-  }
+function destroyActivity(activity_name) {   
+  if (activity_name && activity_name!=activity.activity_name) return;
   activity.style.transform='translateY(-5em)';
   activity.style.visibility='hidden';
   activity.ontransitionend=resetActivity;

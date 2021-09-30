@@ -17,7 +17,7 @@
   <script type="text/javascript" src="scripts/gcircuit.js"></script>
   <script type="text/javascript" src="scripts/index.js" defer></script>
   <script type="text/javascript">
-    function toogleFullscreen(){
+    function toogle_fullscreen(){
       e = document.getElementById('fullscreen');
       if (document.fullscreen){
         document.exitFullscreen()
@@ -61,10 +61,10 @@
   </div>
 
   <header>
-    <label onclick="toogleFullscreen()"><i id="fullscreen" class="material-icons">fullscreen</i></button></label>
-    <h1 id='project_name' contenteditable="true">Portas Lógicas</h1>
+    <label onclick="toogle_fullscreen()"><i id="fullscreen" class="material-icons">fullscreen</i></button></label>
+    <input id='project_name' type="text" value="Portas Lógicas">
     <span class="fright">
-      <button onclick="document.getElementById('id01').style.display='block'; document.getElementById('component_name').focus();" class="w3-button"><i class="material-icons">add</i></button>
+      <label onclick="document.getElementById('id01').style.display='block'; document.getElementById('component_name').focus();"><i class="material-icons">add</i></label>
       <label onclick="save()"><i class="material-icons">file_download</i></label>
       <label for='load_files'><i class="material-icons">file_upload</i></label>
       <input class='.btn' type="file" id="load_files" onchange="load(this.files)">

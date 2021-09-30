@@ -29,19 +29,50 @@ body {
 }
 
 header{
+	margin: 0;
+	padding: 0;
 	width: 100%;
 	top: 0;
 	background-color: #001b2e; /* Blue NCS */
 	border-bottom: thin solid #008cba;
 	box-shadow: 0 0 1em 0 black;
 	z-index: 2;
+	display: block;
+	align-content: center;
 }
+
+#project_name {
+	transition: .2s;
+	background: none;
+	border: none;
+	width: 0;
+	min-width: 8em;
+ 	padding: 10px;
+ 	color: white;
+ 	font-size: 1.5em;
+ 	vertical-align: middle;
+ 	draggable: none;
+}
+#project_name:focus {
+	outline: none;
+}
+
 input[type="file"]{
 	display: none;
 }
 label{
-	padding: 1em;
+	padding: .8em;
+	margin: .2em;
+	border: thin solid transparent;
 	display: inline-block;
+	vertical-align: middle;
+}
+label:hover{
+	border: thin solid #008cba;
+	border-radius: .8em;
+}
+label i{
+	vertical-align: middle;
 }
 h1 {
 	text-align: center;
@@ -142,7 +173,7 @@ button: hover, .btn:hover{
 	background-color: #108FBF;
 }
 
-input[type="text"] {
+.modal input[type="text"] {
 	transition: .2s;
 	background: rgb(255, 255, 255, .1);
 	border: 1px solid #008CBA;
@@ -155,16 +186,16 @@ input[type="text"] {
   text-shadow: None;
 }
 
-input:hover, .btn:hover, button:hover{
+.modal input:hover, .btn:hover, button:hover{
 	box-shadow: 0 0 3px 1px #008CBA;
 }
 
-input:focus, .btn:focus, button:focus{
+.modal input:focus, .btn:focus, button:focus{
 	outline: none;
 	box-shadow: 0 0 8px 0 #008CBA;
 }
 
-input:active, .btn:active, button:active{
+.modal input:active, .btn:active, button:active{
 	outline: none;
 	box-shadow: 0 0 10px 0 #008CBA;
 }

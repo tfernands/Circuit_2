@@ -175,8 +175,7 @@ class GConnection {
     this.points = [];
     this.element.setAttribute('state', gnode1.read());
     this.element.component = this;
-    this.element.addEventListener('pointerdown', selectionHandlerDown);
-    this.element.addEventListener('pointerup', selectionHandlerDown);
+    this.element.addEventListener('pointerup', selectionHandler);
     this.element.onselected = ()=>{
       if (!GConnection.connection_creation_mode){
         for (let p of this.points){
@@ -332,8 +331,7 @@ class GComponent {
       ioarr_out.appendChild(node.element);
     }
     this.element.component = this;
-    this.element.addEventListener('pointerdown',selectionHandlerDown);
-    this.element.addEventListener('pointerup',selectionHandlerUp);
+    this.element.addEventListener('pointerup',selectionHandler);
     this.element.onmove = ()=>{this._updatePathPositions()}
   }
 
@@ -378,31 +376,14 @@ function unselect(target) {
   }
 }
 
-function selectionHandlerDown(e){
-  e.stopPropagation();
-  select(e.target);
-  if (e.shiftKey){
-    for (let el of selection){
-      select(el,'shift')
+function selectionHandler(e){
+  if (e.target.distX==0 && e.target.distY==0){ 
+    if (!e.shiftKey){
+      clearSelection();
     }
-  }
-  tag = e.target.getAttribute('selected');
-  if (!e.shiftKey && selection.length > 1 && tag == ''){
-    let i = 0;
-    while(selection.length > 1){
-      if (selection[i] != e.target){
-        unselect(selection[i]);
-      }
-      else{
-        i++;
-      }
-    }
-  }
-}
-function selectionHandlerUp(e){
-  console.log(e.target.distX, e.target.distY);
-  if ((e.target.distX!=0 || e.target.distY!=0) && selection.length == 1){
-    clearSelection();
+    select(e.target);
+  }else{
+    
   }
 }
 
