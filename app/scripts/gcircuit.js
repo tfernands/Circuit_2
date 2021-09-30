@@ -111,16 +111,17 @@ class GConnection {
   static tempConnection = null;
 
   static createConnectionBegin(gnode){
-    if (current_activity) return;
-    GConnection.connection_creation_mode = true;
-    GConnection.tempConnection = new GConnection(gnode, null);
-
-    let actions={
+        let actions={
       icon: 'close',
       text: 'Criando conexão...',
       callback: GConnection.createConnectionAbort,
     }
-    startActivity('conexao',actions,GConnection.createConnectionAbort,true);
+    if (GConnection.connection_creation_mode ||
+      !startActivity('conexao',actions,GConnection.createConnectionAbort,true))
+      return;
+
+    GConnection.connection_creation_mode = true;
+    GConnection.tempConnection = new GConnection(gnode, null);
 
     document.onpointermove = (e)=>{
       e = e || window.event;
@@ -393,7 +394,7 @@ function unselect(target) {
 }
 
 function selectionHandler(e){
-  if (e.target.distX==0 && e.target.distY==0){
+  if (!(e.target.distX && e.target.distY) || e.target.distX==0 && e.target.distY==0){
     if (e.target.hasAttribute('selected')){
       if (!e.shiftKey && selection.length > 1){
         let i = 0;
