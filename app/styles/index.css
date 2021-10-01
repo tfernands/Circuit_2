@@ -333,25 +333,35 @@ svg{
 	height: 100%;
 	pointer-events:none;
 }
-path{
+.connection{
 	stroke: gray;
 	stroke-width: 5;
 	fill: None;
-	z-index: 10;
-	pointer-events:all;
+	z-index: 3;
+	pointer-events:none;
 }
-path:hover {
+.connection:hover {
 	stroke-width: 6;
 }
-path[selected]{
+.connection[selected]{
 	stroke-width: 4;
 	stroke: gold !important;
 }
-path[state="0"]{
+.connection[state="0"]{
 	stroke: darkred;
 }
-path[state="1"]{
+.connection[state="1"]{
 	stroke: red;
+}
+.connection_touch{
+	stroke: transparent;
+	stroke-width: 12;
+	fill: None;
+	pointer-events:all;
+	z-index: 4;
+}
+.connection_touch:hover{
+	stroke: rgba(255,255,255,.1);
 }
 circle {
 	r: 5;

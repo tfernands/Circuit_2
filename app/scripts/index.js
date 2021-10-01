@@ -96,7 +96,7 @@ function updateComponents() {
 // SAVE AND LOAD
 
 function save(e){
-  let project_name = document.getElementById('project_name').innerHTML;
+  let project_name = document.getElementById('project_name').value;
 
   let modules = [];
   for (let btn of document.getElementById('drawer').children){

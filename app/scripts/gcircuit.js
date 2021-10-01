@@ -169,24 +169,31 @@ class GConnection {
   }
 
   constructor(gnode1){
+    this.points = [];
     this.gnode1 = gnode1;
     this.gnode2 = null;
     this.svg = document.getElementById("svg");
     this.element = document.createElementNS("http://www.w3.org/2000/svg", 'path');
+    this.element.setAttribute('class','connection')
+    this.element_touch = document.createElementNS("http://www.w3.org/2000/svg", 'path');
+    this.element_touch.setAttribute('class','connection_touch')
     this.svg.appendChild(this.element);
-    this.points = [];
+    this.svg.appendChild(this.element_touch);
     this.element.setAttribute('state', gnode1.read());
     this.element.setAttribute('selectable','')
-    this.element.component = this;
-    this.element.addEventListener('pointerup', selectionHandler);
-    this.element.onselected = ()=>{
+    this.element_touch.component = this;
+    this.element_touch.setAttribute('selectable','')
+    this.element_touch.addEventListener('pointerup',selectionHandler);
+    this.element_touch.onselected = ()=>{
+      this.element.setAttribute('selected','');
       if (!GConnection.connection_creation_mode){
         for (let p of this.points){
           p[2].setAttribute('selected','');
         }
       }
-    };
-    this.element.onunselected=()=>{
+    }
+    this.element_touch.onunselected = ()=>{
+      this.element.removeAttribute('selected');
       for (let p of this.points){
         p[2].removeAttribute('selected');
       }
@@ -236,7 +243,6 @@ class GConnection {
   }
 
   remove(){
-    unselect(this.element);
     let i = this.gnode1.paths.indexOf(this);
     this.gnode1.paths.splice(i,1);
     if (this.gnode2 != null){
@@ -245,6 +251,7 @@ class GConnection {
       this.gnode1.cnode.disconnect(this.gnode2.cnode)
     }
     this.element.remove();
+    this.element_touch.remove();
     for (let p of this.points){
       p[2].remove();
     }
@@ -270,6 +277,7 @@ class GConnection {
       d += ' L '+p2.x+' '+p2.y;
     }
     this.element.setAttribute('d', d);
+    this.element_touch.setAttribute('d',d);
   }
 
 }
@@ -294,7 +302,6 @@ class GComponent {
   }
 
   remove(){
-    unselect(this.element)
     this.element.remove();
     for (let n of this.inputs) n.remove();
     for (let n of this.outputs) n.remove();
@@ -434,9 +441,10 @@ function clearSelection(){
 
 function removeSelection(){
   while(selection.length > 0){
-    let i = components.indexOf(selection[0]);
-    components.splice(i,1);
+    let i = components.indexOf(selection[0].component);
+    if (i >= 0) components.splice(i,1);
     selection[0].component.remove();
+    unselect(selection[0]);
   }
 }
 
