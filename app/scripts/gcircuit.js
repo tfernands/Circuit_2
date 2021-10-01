@@ -49,6 +49,8 @@ class GNode {
       this.element.style.cursor = 'pointer';
       this.element.addEventListener('pointerdown', (e)=>{
         if (e.target == this.element && !this.cnode.hasConnection() && !GConnection.connection_creation_mode){
+          e.preventDefault();
+          e.stopPropagation();
           this.changeState();
           updateComponents();
         }
@@ -174,6 +176,7 @@ class GConnection {
     this.svg.appendChild(this.element);
     this.points = [];
     this.element.setAttribute('state', gnode1.read());
+    this.element.setAttribute('selectable','')
     this.element.component = this;
     this.element.addEventListener('pointerup', selectionHandler);
     this.element.onselected = ()=>{
@@ -309,6 +312,7 @@ class GComponent {
   _createElement(){
     this.element = document.createElement('div');
     this.element.setAttribute('class','component draggable');
+    this.element.setAttribute('selectable','')
     const ioarr_in = document.createElement('div');
     ioarr_in.setAttribute('class','ioarray in');
     this.element.appendChild(ioarr_in);
@@ -369,7 +373,7 @@ let remove_selection_activity = {
 }
 
 function select(target){
-  if (!target.hasAttribute('selected')){
+  if (target.hasAttribute('selectable') && !target.hasAttribute('selected')){
     let started = startActivity('selection',remove_selection_activity,clearSelection,false);
     if (started) {
       target.setAttribute('selected','');
@@ -379,6 +383,7 @@ function select(target){
       return true;
     }
   }
+  return false;
 }
 
 function unselect(target) {

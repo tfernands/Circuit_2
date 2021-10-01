@@ -45,6 +45,11 @@ header *{
 .fright{
 	float: right;
 }
+@media only screen and (max-width: 450px) {
+  .fright {
+  	float: none;
+  } 
+}
 
 
 #project_name {

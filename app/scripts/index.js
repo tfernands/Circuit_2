@@ -4,6 +4,7 @@ let activity = null;
 let components = []
 
 function initialize(){
+  components = [];
   workspace = document.getElementById('workspace');
   activity = document.getElementById('activity');
   let e=document.getElementById('container');
@@ -74,7 +75,8 @@ function initialize(){
     }
   })
 
-
+  let drawer = document.getElementById('drawer');
+  for (let e of drawer.children) e.remove();
   createModule("IO");
   createModule("NOT");
   createModule("AND");
@@ -95,12 +97,19 @@ function updateComponents() {
 
 function save(e){
   let project_name = document.getElementById('project_name').innerHTML;
+
+  let modules = [];
+  for (let btn of document.getElementById('drawer').children){
+    modules.push(btn.innerHTML);
+  }
+
   let savejson = {
+    modules: modules,
     components: CCircuit.components,
     workspace: createModuleFromWorkspace(project_name),
   }
 
-  let bb = new Blob([JSON.stringify(savejson)], { type: 'text/plain' });
+  let bb = new Blob([JSON.stringify(savejson)], { type: 'text/json' });
   var a = document.createElement('a');
   a.download = project_name+'.json';
   a.href = window.URL.createObjectURL(bb);
@@ -116,34 +125,44 @@ function load(files) {
     CCircuit.components = json.components;
     document.getElementById('drawer').innerHTML="";
     initialize();
-    for (const key in CCircuit.components) {
+    for (const key of json.modules) {
       if (key) createModule(key, CCircuit.components[key]);
     }
     clearWorkspace();
-    workspaceFromJSON(json);
+    workspaceFromJSON(json.workspace);
   };
   reader.readAsText(file); 
 }
 
-function workspaceFromJSON(json){
-  document.getElementById('project_name').innerHTML = json.workspace.name;
-  for (const i in json.workspace.components){
-    let comp = addComponent(json.workspace.components[i]);
-    comp.element.style.left = json.workspace.g[i].x;
-    comp.element.style.top = json.workspace.g[i].y;
+function workspaceFromJSON(jsonComponent){
+  document.getElementById('project_name').innerHTML = jsonComponent.name;
+  let components = []
+  for (const i in jsonComponent.components){
+    let comp = addComponent(jsonComponent.components[i]);
+    comp.element.style.left = jsonComponent.g[i].x;
+    comp.element.style.top = jsonComponent.g[i].y;
+    components.push(comp);
   }
-  for (const i in json.workspace.connections){
-    let cout = json.workspace.connections[i][0];
-    let cin = json.workspace.connections[i][1];
+  for (const i in jsonComponent.connections){
+    let cout = jsonComponent.connections[i][0];
+    let cin = jsonComponent.connections[i][1];
     let gnode_out = components[cout[0]].outputs[cout[1]-components[cout[0]].inputs.length];
     let gnode_in = components[cin[0]].inputs[cin[1]];
     let con = new GConnection(gnode_out);
     con.connect(gnode_in);
   }
+  return components;
 }
 
 // CREATE MODULE
-
+function getModuleBtn(module_name){
+  for (let current of drawer.children){
+    if (current.innerHTML == module_name){
+      return current;
+    }
+  }
+  return null;
+}
 function createModule(module_name, module_json){
   let name = module_name;
   let json = module_json;
@@ -156,17 +175,27 @@ function createModule(module_name, module_json){
     clearWorkspace();
   } 
   let drawer = document.getElementById("drawer");
-  let btn = document.createElement('button');
-  btn.setAttribute('id','d'+drawer.children.length);
-  btn.setAttribute('draggable','true');
-  btn.innerHTML = name;
-  try{
+
+  let btn = getModuleBtn(name);
+  if (!btn){
+    btn = document.createElement('button');
+    btn.setAttribute('id','d'+drawer.children.length);
+    btn.setAttribute('draggable','true');
+    btn.innerHTML = name;
     btn.onclick = ()=>{addComponent(btn.innerHTML)};
     btn.ondragstart = dragStart;
     btn.ondragover= allowDrop;
+    btn.oncontextmenu=(e)=>{
+      e.preventDefault();
+      e.stopPropagation();
+      let components = workspaceFromJSON(CCircuit.components[btn.innerHTML]);
+      for (let cmp of components){
+        select(cmp.element);
+      }
+      components[0].element.scrollIntoView();
+      btn.remove();
+    };
     drawer.appendChild(btn);
-  }finally{
-    return true;
   }
   return true;
 }
@@ -216,7 +245,7 @@ addEventListener("keydown", (e)=>{
     removeSelection();
   }
   if (e.key=='Escape'){
-    destroyActivity();
+    abortActivity();
     if (document.getElementById('id01').style.display!='none'){
       document.getElementById('id01').style.display='none';
     }
