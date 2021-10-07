@@ -1,62 +1,105 @@
-
+let viewport = null;
 let workspace = null;
 let activity = null;
+let componentlist = null;
 let components = []
+
+function getWorkspaceScale(){
+  let transform = workspace.computedStyleMap().get('transform')[0];
+  return transform?.x.value??1;
+}
+
+/*
+* pos: [clientX, clientY]
+* options: [{icon:, text:, color:, callback:}, ...]
+*/
+function ctxmenu(e, options){
+  let ctx = document.getElementById('ctxmenu');
+  let ctxcontent = document.getElementById('ctxcontent');
+  ctx.style.visibility='hidden';
+  ctxcontent.style.transition='0s';
+  ctxcontent.style.top = (e.clientY+10)+'px';
+  ctxcontent.style.left = (e.clientX+10)+'px';
+  while (ctxcontent.children.length > 0)
+    ctxcontent.children[0].remove();
+  if (options){
+    for (let o of options){
+      let label = document.createElement('label');
+      let icon = document.createElement('i');
+      icon.setAttribute('class', 'material-icons');
+      icon.innerHTML = o.icon;
+      label.appendChild(icon);
+      label.innerHTML += o.text;
+      label.onclick = o.callback;
+      if (o.color){
+        label.style.color=o.color;
+      }
+      ctxcontent.appendChild(label);
+    }
+    ctxcontent.style.height = 'auto';
+    ctxcontent.style.height = '0px';
+    ctx.style.visibility='visible';
+    ctxcontent.style.transition='height .2s';
+    ctxcontent.style.height = 'auto';
+  }
+}
 
 function initialize(){
   components = [];
+  container = document.getElementById('container');
+  viewport = document.getElementById('viewport');
   workspace = document.getElementById('workspace');
+  componentlist = document.getElementById('componentlist')
   activity = document.getElementById('activity');
-  let e=document.getElementById('container');
-  let r=e.getBoundingClientRect();
-  e.scroll(Math.max(r.width,r.height), Math.max(r.width,r.height));
+  let r=workspace.parentElement.getBoundingClientRect();
+  viewport.scroll(Math.max(r.width,r.height), Math.max(r.width,r.height));
 
   //ATTACH EVENT LISTENERS
-  workspace.selectionRectElement = document.createElement('div');
-  workspace.selectionRectElement.setAttribute('class','selectionRect')
-  workspace.appendChild(workspace.selectionRectElement);
+  container.selectionRectElement = document.createElement('div');
+  container.selectionRectElement.setAttribute('class','selectionRect')
+  container.appendChild(container.selectionRectElement);
 
   function startSelectionRectangle(e) {
+    if (e.button!=0) return;
     if (e.target == workspace){
-      workspace.can_start_selection = true;
-      let offset = workspace.getBoundingClientRect();
-      workspace.rx1 = e.clientX-offset.x;
-      workspace.ry1 = e.clientY-offset.y;
+      console.log('here');
+      container.can_start_selection = true;
+      container.x1 = e.clientX;
+      container.y1 = e.clientY;
     }
   }
 
-  workspace.addEventListener('pointerdown', (e)=>{
+  container.addEventListener('pointerdown', (e)=>{
     if (e.target == workspace){
       clearSelection();
     }
   });
-  workspace.addEventListener('mousedown', startSelectionRectangle);
+  container.addEventListener('mousedown', startSelectionRectangle);
   window.addEventListener('mousemove', e=>{
-    if (workspace.can_start_selection){
-      if (!workspace.rect_selection){
-        workspace.rect_selection = true;
-        workspace.selectionRectElement.style.opacity=1;
+    if (container.can_start_selection){
+      if (!container.rect_selection){
+        container.rect_selection = true;
+        container.selectionRectElement.style.opacity=1;
       }
-      let offset = workspace.getBoundingClientRect();
-      workspace.rx2 = e.clientX-offset.x;
-      workspace.ry2 = e.clientY-offset.y;
-      let x1 = Math.min(workspace.rx2, workspace.rx1);
-      let y1 = Math.min(workspace.ry2, workspace.ry1);
-      let x2 = Math.max(workspace.rx2, workspace.rx1);
-      let y2 = Math.max(workspace.ry2, workspace.ry1);
+      container.x2 = e.clientX;
+      container.y2 = e.clientY;
+      let x1 = Math.min(container.x2, container.x1);
+      let y1 = Math.min(container.y2, container.y1);
+      let x2 = Math.max(container.x2, container.x1);
+      let y2 = Math.max(container.y2, container.y1);
       let w = x2-x1;
       let h = y2-y1;
-      workspace.selectionRectElement.style.left = x1+'px';
-      workspace.selectionRectElement.style.top = y1+'px';
-      workspace.selectionRectElement.style.width = w+'px';
-      workspace.selectionRectElement.style.height = h+'px';
+      container.selectionRectElement.style.left = x1+'px';
+      container.selectionRectElement.style.top = y1+'px';
+      container.selectionRectElement.style.width = w+'px';
+      container.selectionRectElement.style.height = h+'px';
       for (let el of workspace.children){
         if (el.component){
           let elRect = el.getBoundingClientRect();
-          if (elRect.x-offset.x > x1 &&
-              elRect.x+elRect.width-offset.x < x2 &&
-              elRect.y-offset.y > y1 &&
-              elRect.y+elRect.height-offset.y < y2){
+          if (elRect.x > x1 &&
+              elRect.x+elRect.width < x2 &&
+              elRect.y > y1 &&
+              elRect.y+elRect.height < y2){
             select(el);
           }
           else{
@@ -68,10 +111,10 @@ function initialize(){
     }
   })
   window.addEventListener('mouseup', e=>{
-    if (workspace.rect_selection || workspace.can_start_selection){   
-      workspace.rect_selection = false;
-      workspace.can_start_selection = false;
-      workspace.selectionRectElement.style.opacity=0;
+    if (container.rect_selection || container.can_start_selection){   
+      container.rect_selection = false;
+      container.can_start_selection = false;
+      container.selectionRectElement.style.opacity=0;
     }
   })
 
@@ -136,22 +179,22 @@ function load(files) {
 
 function workspaceFromJSON(jsonComponent){
   document.getElementById('project_name').innerHTML = jsonComponent.name;
-  let components = []
+  let components_added = []
   for (const i in jsonComponent.components){
     let comp = addComponent(jsonComponent.components[i]);
     comp.element.style.left = jsonComponent.g[i].x;
     comp.element.style.top = jsonComponent.g[i].y;
-    components.push(comp);
+    components_added.push(comp);
   }
   for (const i in jsonComponent.connections){
     let cout = jsonComponent.connections[i][0];
     let cin = jsonComponent.connections[i][1];
-    let gnode_out = components[cout[0]].outputs[cout[1]-components[cout[0]].inputs.length];
-    let gnode_in = components[cin[0]].inputs[cin[1]];
+    let gnode_out = components_added[cout[0]].outputs[cout[1]-components_added[cout[0]].inputs.length];
+    let gnode_in = components_added[cin[0]].inputs[cin[1]];
     let con = new GConnection(gnode_out);
     con.connect(gnode_in);
   }
-  return components;
+  return components_added;
 }
 
 // CREATE MODULE
@@ -188,11 +231,20 @@ function createModule(module_name, module_json){
     btn.oncontextmenu=(e)=>{
       e.preventDefault();
       e.stopPropagation();
-      let components = workspaceFromJSON(CCircuit.components[btn.innerHTML]);
-      for (let cmp of components){
+      let cx = 0;
+      let cy = 0;
+      let tempComp = workspaceFromJSON(CCircuit.components[btn.innerHTML]);
+      let offsetRect = workspace.getBoundingClientRect();
+      let viewportRect = viewport.getBoundingClientRect();
+      for (let cmp of tempComp){
+        let rect = cmp.element.getBoundingClientRect();
+        cx += rect.x-offsetRect.x;
+        cy += rect.y-offsetRect.y;
         select(cmp.element);
       }
-      components[0].element.scrollIntoView();
+      cx=(cx/tempComp.length)-viewportRect.width/2;
+      cy=(cy/tempComp.length)-viewportRect.height/2;
+      viewport.scrollTo(cx,cy);
       btn.remove();
     };
     drawer.appendChild(btn);
@@ -219,23 +271,39 @@ function createModuleFromWorkspace(name){
 function clearWorkspace(){
   for (let c of components) c.remove();
   components.length = 0;
+  componentlist.innerHTML = '';
+  document.getElementById('listcount').innerHTML=0;
 }
-
 
 
 function addComponent(json){
   let workspace = document.getElementById("workspace");
   let component = new GComponent(CCircuit.fromJSON(json));
   components.push(component);
+
+  let count = document.getElementById('listcount');
+  let li = document.createElement('li');
+  let span = document.createElement('span');
+  span.innerHTML = component.ccomp.name;
+  let i = document.createElement('i');
+  i.setAttribute('class', "material-icons");
+  i.innerHTML='delete';
+  i.onclick=()=>{component.remove()};
+  component.onremove = ()=>{li.remove();count.innerHTML = components.length;};
+  li.appendChild(span);
+  li.appendChild(i);
+  componentlist.appendChild(li);
+  count.innerHTML = components.length;
+
   workspace.appendChild(component.element);
   let offsetRect = workspace.getBoundingClientRect();
   let contentRect = workspace.parentElement.getBoundingClientRect();
   let rect = component.element.getBoundingClientRect();
-  component.element.style.top=(-offsetRect.y-rect.height/2+contentRect.height/2)+'px';
-  component.element.style.left=(-offsetRect.x-rect.width/2+contentRect.width/2)+'px';
+  let scale = getWorkspaceScale();
+  component.element.style.top=((contentRect.height/2-offsetRect.y)/scale-rect.height/(2*scale))+'px';
+  component.element.style.left=((contentRect.width/2-offsetRect.x)/scale-rect.width/(2*scale))+'px';
   return component;
 }
-
 
 
 // KEY EVENTS HANDLE
@@ -246,12 +314,8 @@ addEventListener("keydown", (e)=>{
   }
   if (e.key=='Escape'){
     abortActivity();
-    if (document.getElementById('id01').style.display!='none'){
-      document.getElementById('id01').style.display='none';
-    }
-    else if (document.getElementById('id02').style.display!='none'){
-      document.getElementById('id02').style.display='none';
-    }
+    document.getElementById('dialog-nc').close();
+    document.getElementById('dialog-ioname').close(); 
   }
 });
 
@@ -291,8 +355,9 @@ function workspace_drop(e){
   let component = addComponent(dragged.innerHTML);
   let offsetRect = component.element.parentElement.getBoundingClientRect();
   let rect = component.element.getBoundingClientRect();
-  component.element.style.top=(e.clientY-offsetRect.y-rect.height/2)+'px';
-  component.element.style.left=(e.clientX-offsetRect.x-rect.width/2)+'px';
+  let scale = getWorkspaceScale();
+  component.element.style.top=((e.clientY-offsetRect.y)/scale-rect.height/(2*scale))+'px';
+  component.element.style.left=((e.clientX-offsetRect.x)/scale-rect.width/(2*scale))+'px';
 }
 
 
@@ -340,9 +405,8 @@ function resetActivity(){
   activity.ontransitionend = null;
   activity.onabort = null;
   activity.aborted = false;
-  for (let c of activity.children){
-    c.remove();
-  }
+  while (activity.children.length > 0)
+    activity.children[0].remove();
 }
 
 function abortActivity(activity_name) {   
