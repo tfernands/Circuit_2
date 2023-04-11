@@ -194,6 +194,10 @@ function workspaceFromJSON(jsonComponent){
     let con = new GConnection(gnode_out);
     con.connect(gnode_in);
   }
+  for (const i in jsonComponent.inputs){
+    let gnode = components_added[cout[0]].inputs[cout[1]];
+    gnode.id = jsonComponent.inputs[i][2];
+  }
   return components_added;
 }
 
