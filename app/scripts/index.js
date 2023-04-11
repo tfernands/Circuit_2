@@ -187,24 +187,31 @@ function workspaceFromJSON(jsonComponent){
     components_added.push(comp);
   }
   for (const i in jsonComponent.inputs){
-    const c = jsonComponent.inputs[i];
-    const gnode = components_added[c[0]].inputs[c[1]];
-    gnode.rename(c[2]);
+    try {
+      const c = jsonComponent.inputs[i];
+      const gnode = components_added[c[0]].inputs[c[1]];
+      gnode.rename(c[2]);
+    }
+    catch(e) { console.log(e); }
   }
   for (const i in jsonComponent.outputs){
-    const c = jsonComponent.outputs[i];
-    const gnode = components_added[c[0]].outputs[c[1]];
-    console.log(components_added[c[0]].outputs[c[1]-components_added[c[0]].inputs.length]);
-    console.log(components_added);
-    //gnode.rename(c[2]);
+    try {
+      const c = jsonComponent.outputs[i];
+      const gnode = components_added[c[0]].outputs[c[1]-components_added[c[0]].inputs.length]
+      gnode.rename(c[2]);
+    }
+    catch(e) { console.log(e); }
   }
   for (const i in jsonComponent.connections){
-    let cout = jsonComponent.connections[i][0];
-    let cin = jsonComponent.connections[i][1];
-    let gnode_out = components_added[cout[0]].outputs[cout[1]-components_added[cout[0]].inputs.length];
-    let gnode_in = components_added[cin[0]].inputs[cin[1]];
-    let con = new GConnection(gnode_out);
-    con.connect(gnode_in);
+    try {
+      let cout = jsonComponent.connections[i][0];
+      let cin = jsonComponent.connections[i][1];
+      let gnode_out = components_added[cout[0]].outputs[cout[1]-components_added[cout[0]].inputs.length];
+      let gnode_in = components_added[cin[0]].inputs[cin[1]];
+      let con = new GConnection(gnode_out);
+      con.connect(gnode_in);
+    }
+    catch(e) { console.log(e); }
   }
   return components_added;
 }
