@@ -192,9 +192,11 @@ function workspaceFromJSON(jsonComponent){
     gnode.rename(c[2]);
   }
   for (const i in jsonComponent.outputs){
-    const c = jsonComponent.inputs[i];
+    const c = jsonComponent.outputs[i];
     const gnode = components_added[c[0]].outputs[c[1]];
-    gnode.rename(c[2]);
+    console.log(components_added[cout[0]].outputs[cout[1]-components_added[cout[0]].inputs.length]);
+    console.log(components_added);
+    //gnode.rename(c[2]);
   }
   for (const i in jsonComponent.connections){
     let cout = jsonComponent.connections[i][0];
