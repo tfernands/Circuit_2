@@ -195,8 +195,14 @@ function workspaceFromJSON(jsonComponent){
     con.connect(gnode_in);
   }
   for (const i in jsonComponent.inputs){
-    let gnode = components_added[cout[0]].inputs[cout[1]];
-    gnode.id = jsonComponent.inputs[i][2];
+    const c = jsonComponent.inputs[i];
+    const gnode = components_added[c[0]].inputs[c[1]];
+    gnode.rename(c[2]);
+  }
+  for (const i in jsonComponent.outputs){
+    const c = jsonComponent.inputs[i];
+    const gnode = components_added[c[0]].outputs[c[1]-components_added[c[0]].inputs.length];
+    gnode.rename(c[2]);
   }
   return components_added;
 }
