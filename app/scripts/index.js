@@ -186,14 +186,6 @@ function workspaceFromJSON(jsonComponent){
     comp.element.style.top = jsonComponent.g[i].y;
     components_added.push(comp);
   }
-  for (const i in jsonComponent.connections){
-    let cout = jsonComponent.connections[i][0];
-    let cin = jsonComponent.connections[i][1];
-    let gnode_out = components_added[cout[0]].outputs[cout[1]-components_added[cout[0]].inputs.length];
-    let gnode_in = components_added[cin[0]].inputs[cin[1]];
-    let con = new GConnection(gnode_out);
-    con.connect(gnode_in);
-  }
   for (const i in jsonComponent.inputs){
     const c = jsonComponent.inputs[i];
     const gnode = components_added[c[0]].inputs[c[1]];
@@ -203,6 +195,14 @@ function workspaceFromJSON(jsonComponent){
     const c = jsonComponent.inputs[i];
     const gnode = components_added[c[0]].outputs[c[1]-components_added[c[0]].inputs.length];
     gnode.rename(c[2]);
+  }
+  for (const i in jsonComponent.connections){
+    let cout = jsonComponent.connections[i][0];
+    let cin = jsonComponent.connections[i][1];
+    let gnode_out = components_added[cout[0]].outputs[cout[1]-components_added[cout[0]].inputs.length];
+    let gnode_in = components_added[cin[0]].inputs[cin[1]];
+    let con = new GConnection(gnode_out);
+    con.connect(gnode_in);
   }
   return components_added;
 }
