@@ -194,7 +194,7 @@ function workspaceFromJSON(jsonComponent){
   for (const i in jsonComponent.outputs){
     const c = jsonComponent.outputs[i];
     const gnode = components_added[c[0]].outputs[c[1]];
-    console.log(components_added[cout[0]].outputs[cout[1]-components_added[cout[0]].inputs.length]);
+    console.log(components_added[c[0]].outputs[c[1]-components_added[c[0]].inputs.length]);
     console.log(components_added);
     //gnode.rename(c[2]);
   }
