@@ -371,6 +371,16 @@ class GComponent {
     this._createElement();
     this.update();
   }
+  
+  getNodeById(node_id){
+	  return this.ccomp.getNodes().find(n=>(n.id==node_id));
+	}
+
+	writeNodeStatesByIdList(nodelist, states){
+	  for (const i in nodelist){
+	    this.getNodeById(nodelist[i]).write(states[i]);
+	  }
+	}
 
   update(){
     this.ccomp.update();
