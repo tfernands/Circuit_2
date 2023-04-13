@@ -378,7 +378,13 @@ class GComponent {
 
   writeNodeStatesByIdList(nodelist, states){
     for (const i in nodelist){
+      try {
       this.getNodeById(nodelist[i]).set(states[i]);
+      }
+      catch(e) {
+        console.log(e);
+        console.log(i, nodelist, nodelist[i]); 
+      }
     }
   }
 
