@@ -1,10 +1,12 @@
 COMP8 INSTRUCTION SET
 
 
+
+
 INSTRUCTION            DESCRIPTION
 --------------------------------------------------------------------------------------
 HLT                    halt
-OUT                    write to output buffer
+OUT                    write data in A to output buffer
 ADD                    add A and B and store the result to A: A = A + B    
 SUB                    subtract B from A and store the result to A: A = A - B    
 LD   <reg>             load memory DATA at current memory address to register <A|B>
@@ -15,6 +17,20 @@ LDIH <reg> <imm>       load 4bit immediate to register <A|B> highest significant
 ADRI <imm>             set immediate to memory ADDRESS
 BEQ  <imm>             if A = B PC is set to immediate value, else continue.
 JMP  <imm>             set PC to immediate value.
+JMPR <reg>             set PC to the value stored in the register <A|B>
+
+
+EXAMPLE PROGRAM
+FIBONACCI SEQUENCE
+ASSEMBLY      BINARY
+--------------------------
+0	LDI A 1       1000 1100
+1	LDI B 1       1000 1101
+2	ST  A         0001 0100
+3	ADD           0000 0100
+4	OUT           0000 0001
+5	LD  B         0001 0001
+6	JMP 2         0100 1111
 
 -----------------------------------------------------------
 | TYPE | CODE |                  LAYOUT                   |
@@ -27,27 +43,29 @@ JMP  <imm>             set PC to immediate value.
 | TYPE |  NAME  |  BITCONFIG   | CONTROLER OUTPUT |
 |------|--------|-012-3-4-56-7-|------------------|
 |  O   | HLT    | --- 0 0 00 0 | 00 00 000 00 000 |  halts (dont actually halt, but nothing is done)
-|  O   | OUT    | --- 0 0 00 1 | 00 00 000 00 001 |  write to output buffer
-|  O   | ADD    | --- 0 0 10 0 | 00 10 000 10 000 |  A = A + B    
-|  O   | SUB    | --- 0 0 10 1 | 00 10 000 10 100 |  A = A - B
+|  O   | OUT    | --- 0 0 00 1 | 00 10 000 00 001 |  write data in A to output buffer
+|  O   | ADD    | --- 0 0 10 0 | 00 11 000 10 000 |  A = A + B    
+|  O   | SUB    | --- 0 0 10 1 | 00 11 000 10 100 |  A = A - B
 |  M   | LD A   | --- 1 0 00 0 | 00 01 100 00 000 |  load memory DATA at current address to A
 |  M   | LD B   | --- 1 0 00 1 | 00 00 100 01 000 |  load memory DATA at current address to B
 |  M   | ST A   | --- 1 0 10 0 | 00 10 010 00 000 |  store A DATA to memory at current address
 |  M   | ST B   | --- 1 0 10 1 | 00 00 010 10 000 |  store B DATA to memory at current address
 |  M   | ADR A  | --- 1 0 01 0 | 00 10 001 00 000 |  set the memory ADDRESS to A
 |  M   | ADR B  | --- 1 0 01 1 | 00 00 001 10 000 |  set the memory ADDRESS to B
+|  M   | JMPR A | --- 1 0 11 0 | 00 10 000 00 010 |  set PC the value loaded to register A
+|  M   | JMPR B | --- 1 0 11 1 | 00 00 000 10 010 |  set PC the value loaded to register B
 |  I   | LDI  A | <imm> 1 10 0 | 01 01 000 00 000 |  load immediate to A (lower significant bits)
 |  I   | LDI  B | <imm> 1 10 1 | 01 00 000 01 000 |  load immediate to B (lower significant bits)
 |  I   | LDHI A | <imm> 1 01 0 | 11 01 000 00 000 |  load immediate to A (higher significant bits)
 |  I   | LDHI B | <imm> 1 01 1 | 11 00 000 01 000 |  load immediate to B (higher significant bits)
 |  I   | ADRI   | <imm> 1 00 0 | 01 00 001 00 000 |  set immediate to memory ADDRESS
-|  I   | BEQ    | <imm> 1 11 0 | 01 00 000 00 1?0 |  if A = B PC is set to immediate value, else continue.
+|  I   | BEQ    | <imm> 1 11 0 | 01 10 000 00 1?0 |  if A = B PC is set to immediate value, else continue.
 |  I   | JMP    | <imm> 1 11 1 | 01 00 000 00 010 |  set PC to immediate value.
 ---------------------------------------------------
 
 CONTROLER OUTPUT IN ORDER
-IMM2BUS
 IMM2BUS_H
+IMM2BUS
 A_READ 
 A_WRITE
 M_READ
@@ -58,3 +76,165 @@ B_WRITE
 ALU_OP
 PC_WRITE
 OUT_WRITE
+
+=======================================================
+
+COMPILER.js
+
+INSTRUCTION_SET = {
+	"HLT":   "0000 0000",
+	"OUT":   "0000 0001",
+	"ADD":   "0000 0100",
+	"SUB":   "0000 0101",
+	"LD":    "0001 000R",
+	"ST":    "0001 010R",
+	"ADR":   "0001 001R",
+	"JMPR":  "0001 011R",
+        "LDI":   "iiii 110R",
+	"LDHI":  "iiii 101R",
+	"ADRI":  "iiii 1000",
+	"BEQ":   "iiii 1110",
+        "JMP":   "iiii 1111"
+}
+
+function getComponent(name){
+  return components.filter(e=>e.ccomp.name==name);
+}
+
+function parse_imm(imm){
+  if (typeof(imm)==="string"){
+    imm = Number.parseInt(imm);
+  }
+  return (imm+16).toString(2).substring(1).split("").reverse().join("");
+}
+
+function parseAssemblyLine(line){
+  const tokens = line.toUpperCase().replace(/\s+/g,' ').replace(/^\s*/g,'').split(' ');
+  let bin = INSTRUCTION_SET[tokens[0]].replaceAll(' ', '');
+  if (bin.includes("R")){
+    bin = bin.replace("R", tokens[1]=="A"?"0":"1");
+    if (bin[4] === "1"){
+      bin = bin.replace("iiii", parse_imm(tokens[2]));
+    }
+  }
+  else {
+     if (bin[4] === "1"){
+       bin = bin.replace("iiii", parse_imm(tokens[1]));
+     }
+  }
+  return bin.substr(0, 8);
+}
+
+function parseAssembly(string){
+  const raw_lines = string.split('\n');
+  const instructions = [];
+  const binary = [];
+  const blocks = {};
+  for (const l of raw_lines){
+    const line = l.toUpperCase().replace(/\s+/g,' ').replace(/^\s*/g,'');
+    if (line.length === 0) continue;
+    try {
+      binary.push(parseAssemblyLine(line));
+      instructions.push(line);
+    }
+    catch {
+      blocks[line.replace(':', '')] = instructions.length;
+    }
+  }
+  for (const i in instructions){
+    for (const block in blocks){
+      instructions[i] = instructions[i].replace(block, blocks[block]);
+      binary[i] = parseAssemblyLine(instructions[i]);
+    }
+  }
+  return {instructions, binary, blocks}
+}
+
+function address_list(address_number, slots){
+  return (address_number+1024).toString(2).split('').reverse().join('')
+	.substr(0, slots).split('').map(e=>(Number.parseInt(e)));
+}
+
+function instructionLoader(component, prog_text, writeNodeId, clkNodeId, addressNodeIds, binaryNodeIds, speed){
+  component.writeNodeStatesByIdList([writeNodeId, clkNodeId], [1, 0]);
+  prog = parseAssembly(prog_text);
+  let i = 0;
+  let address = 0;
+  component.writeNodeStatesByIdList(addressNodeIds, address_list(0, addressNodeIds.length));
+  const interval = setInterval(()=>{
+    try {
+      if (i === prog.binary.length*3){
+	clearInterval(interval);
+        component.writeNodeStatesByIdList([writeNodeId], [0]);
+        component.writeNodeStatesByIdList(addressNodeIds, address_list(0, addressNodeIds.length));
+        component.writeNodeStatesByIdList(binaryNodeIds, address_list(0, binaryNodeIds.length));
+        console.log("Finished");
+      }
+      if (i % 3 === 0){
+        component.writeNodeStatesByIdList(binaryNodeIds, prog.binary[address].split("").map(e=>Number.parseInt(e))); 
+      }
+      else if (i % 3 === 1) {
+         component.writeNodeStatesByIdList([clkNodeId], [1]);
+         console.log(prog.binary[address],"  ", prog.instructions[address]);
+         address++;
+      }
+      else {
+         component.writeNodeStatesByIdList([clkNodeId], [0]);
+         component.writeNodeStatesByIdList(addressNodeIds, address_list(address, addressNodeIds.length));
+      }
+      i++;
+    }
+    catch(e){
+      console.log(e);
+      clearInterval(interval);
+    }
+  }, speed);
+}
+
+prog_text = `
+# YOUR PROGRAM HERE  
+
+LDI  A 8	
+
+JMP PROG_BEGIN	
+PROG_END:
+ADRI 1		
+LD   A		A: f
+OUT		
+LDHI A 2	
+LDI  B 1	
+SUB		
+JMPR A		
+
+PROG_BEGIN:
+LDI  B 1	
+ST   A			0: X
+ADRI 1		
+ST   B	   1: f-1
+ADRI 2		0100 1000
+ST   B		0001 0101	2: f-2
+
+ADRI 1		1000 1000	
+LD   A		0001 0000	A: f-1
+ADRI 2		0100 1000
+LD   B		0001 0001	B: f-2
+ST   A		0001 0100	2: f-1
+ADD  		0000 0100
+ADRI 1		1000 1000	
+ST   A		0001 0100	1: f
+ADRI 0		0000 1000
+LD   A		0001 0000	A=X
+LDI  B 1	1000 1101
+SUB		0000 0101	A=X-1
+BEQ  PROG_END	0100 1110	X=1?
+ST   A		0001 0100	0: X-1
+JMP  15		1111 1111
+`
+
+
+instructionLoader(
+  getComponent("MEM32")[0],
+  prog_text, "W", "clk", 
+  ["s0","s1","s2","s3","s4"],
+  ["X0", "X1", "X2", "X3", "X4", "X5", "X6", "X7"], 100
+)
